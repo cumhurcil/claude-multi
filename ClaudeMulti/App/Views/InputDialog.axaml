@@ -1,0 +1,16 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="ClaudeMulti.App.Views.InputDialog"
+        Width="460" SizeToContent="Height" CanResize="False" ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner" Background="{DynamicResource Bg}" Foreground="{DynamicResource Text}" FontSize="13.5">
+    <StackPanel Margin="26,24,26,22">
+        <TextBlock Name="Heading" Classes="h2"/>
+        <TextBlock Name="Prompt" Classes="dim" Margin="0,6,0,14"/>
+        <TextBox Name="Input" TextChanged="Input_TextChanged"/>
+        <TextBlock Name="Error" Classes="bad" Margin="0,8,0,0" MinHeight="16"/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0" Spacing="8">
+            <Button Content="Cancel" IsCancel="True" Click="Cancel_Click"/>
+            <Button Name="Ok" Classes="accent" Content="OK" IsDefault="True" Click="Ok_Click" MinWidth="86" HorizontalContentAlignment="Center"/>
+        </StackPanel>
+    </StackPanel>
+</Window>

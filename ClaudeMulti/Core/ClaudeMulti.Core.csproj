@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>ClaudeMulti.Core</RootNamespace>
+    <AssemblyName>ClaudeMulti.Core</AssemblyName>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="ClaudeMulti.SelfTest" />
+  </ItemGroup>
+</Project>

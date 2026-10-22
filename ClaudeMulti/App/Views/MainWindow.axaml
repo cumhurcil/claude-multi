@@ -1,0 +1,430 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:inf="using:ClaudeMulti.App.Infrastructure"
+        xmlns:vm="using:ClaudeMulti.App.ViewModels"
+        x:Class="ClaudeMulti.App.Views.MainWindow"
+        Title="Claude Multi" Width="1280" Height="800" MinWidth="960" MinHeight="640"
+        Background="{DynamicResource Bg}" Foreground="{DynamicResource Text}"
+        Icon="/Assets/app.png" FontSize="13.5"
+        WindowStartupLocation="CenterScreen">
+    <Window.DataTemplates>
+        <!-- A segmented control for every ChoiceGroup. -->
+        <DataTemplate DataType="inf:ChoiceGroup">
+            <ItemsControl ItemsSource="{Binding Items}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <RadioButton Classes="segment" Content="{Binding Label}" IsChecked="{Binding IsSelected, Mode=TwoWay}"/>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </DataTemplate>
+
+        <DataTemplate DataType="vm:InstanceViewModel">
+            <Border Classes="card" Width="460" Margin="0,0,18,18">
+                <StackPanel>
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding StatusText}" Foreground="{Binding StatusBrush}" FontSize="12.5" VerticalAlignment="Center"/>
+                        <Ellipse DockPanel.Dock="Left" Width="10" Height="10" Fill="{Binding StatusBrush}" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding Label}" Classes="h2" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" MaxWidth="260"/>
+                            <Border IsVisible="{Binding IsMain}" CornerRadius="6" Background="{DynamicResource Tint}" Padding="7,2" Margin="10,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="MAIN" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource Accent}"/>
+                            </Border>
+                        </StackPanel>
+                    </DockPanel>
+                    <TextBlock Text="{Binding AccountText}" Foreground="{Binding AccountBrush}" Margin="20,12,0,0" FontSize="12.5"/>
+                    <TextBlock Text="{Binding ChatText}" Classes="dim" Margin="20,3,0,0"/>
+                    <TextBlock Text="{Binding DataDir}" ToolTip.Tip="{Binding DataDir}" Classes="dim" FontSize="11" Opacity="0.7"
+                               TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" Margin="20,3,0,16"/>
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                            <Button Classes="icon" ToolTip.Tip="Open data folder" Command="{Binding FolderCommand}" Margin="0,0,6,0">
+                                <PathIcon Data="{StaticResource IconFolder}" Width="16" Height="16"/>
+                            </Button>
+                            <Button Classes="icon" ToolTip.Tip="Use with an API key as Claude Code (CLI), e.g. OpenRouter" Command="{Binding ApiCommand}" Margin="0,0,6,0"
+                                    IsVisible="{Binding CanUseApi}">
+                                <PathIcon Data="{StaticResource IconKey}" Width="16" Height="16"/>
+                            </Button>
+                            <Button Classes="icon" ToolTip.Tip="Rename" Command="{Binding RenameCommand}">
+                                <PathIcon Data="{StaticResource IconEdit}" Width="16" Height="16"/>
+                            </Button>
+                            <Button Classes="icon" ToolTip.Tip="Close completely (stops all its windows and background processes)" Command="{Binding CloseCommand}" Margin="6,0,0,0"
+                                    IsVisible="{Binding CanClose}">
+                                <PathIcon Data="{StaticResource IconStop}" Width="16" Height="16"/>
+                            </Button>
+                            <Button Classes="icon" ToolTip.Tip="Delete this instance" Command="{Binding RemoveCommand}" Margin="6,0,0,0"
+                                    IsVisible="{Binding CanRemove}">
+                                <PathIcon Data="{StaticResource IconTrash}" Width="16" Height="16"/>
+                            </Button>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Classes="accent" Command="{Binding OpenCommand}" ToolTip.Tip="{Binding OpenTip}" Margin="0,0,8,0">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <PathIcon Data="{StaticResource IconPlay}" Width="14" Height="14"/>
+                                    <TextBlock Text="{Binding OpenText}"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding LoginCommand}" ToolTip.Tip="{Binding LoginTip}">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <PathIcon Data="{StaticResource IconLogin}" Width="14" Height="14"/>
+                                    <TextBlock Text="{Binding LoginText}"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </DockPanel>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+    </Window.DataTemplates>
+
+    <Grid ColumnDefinitions="238,*">
+        <!-- Sidebar -->
+        <Border Background="{DynamicResource Sidebar}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,1,0">
+            <DockPanel Margin="16,22,16,18">
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="6,0,0,26">
+                    <Image Source="/Assets/app.png" Width="38" Height="38"/>
+                    <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="Claude Multi" FontSize="16" FontWeight="SemiBold"/>
+                        <TextBlock Text="Instance manager" Classes="dim" FontSize="11.5"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel DockPanel.Dock="Bottom">
+                    <TextBlock Text="{Binding LastSyncShort}" Classes="dim" FontSize="11" Margin="8,0,8,10"/>
+                    <Button Content="Exit" Click="Exit_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                </StackPanel>
+
+                <StackPanel Name="NavPanel">
+                    <RadioButton Name="NavInstances" Classes="nav" GroupName="nav" IsChecked="True" Tag="0" IsCheckedChanged="Nav_Checked">
+                        <StackPanel Orientation="Horizontal" Spacing="12"><PathIcon Data="{StaticResource IconInstances}" Width="16" Height="16"/><TextBlock Text="Instances"/></StackPanel>
+                    </RadioButton>
+                    <RadioButton Classes="nav" GroupName="nav" Tag="1" IsCheckedChanged="Nav_Checked">
+                        <StackPanel Orientation="Horizontal" Spacing="12"><PathIcon Data="{StaticResource IconSync}" Width="16" Height="16"/><TextBlock Text="Sync"/></StackPanel>
+                    </RadioButton>
+                    <RadioButton Classes="nav" GroupName="nav" Tag="2" IsCheckedChanged="Nav_Checked">
+                        <StackPanel Orientation="Horizontal" Spacing="12"><PathIcon Data="{StaticResource IconLink}" Width="16" Height="16"/><TextBlock Text="Sign-in routing"/></StackPanel>
+                    </RadioButton>
+                    <RadioButton Classes="nav" GroupName="nav" Tag="3" IsCheckedChanged="Nav_Checked">
+                        <StackPanel Orientation="Horizontal" Spacing="12"><PathIcon Data="{StaticResource IconTimer}" Width="16" Height="16"/><TextBlock Text="Prompt cache"/></StackPanel>
+                    </RadioButton>
+                    <RadioButton Classes="nav" GroupName="nav" Tag="4" IsCheckedChanged="Nav_Checked">
+                        <StackPanel Orientation="Horizontal" Spacing="12"><PathIcon Data="{StaticResource IconLog}" Width="16" Height="16"/><TextBlock Text="Log"/></StackPanel>
+                    </RadioButton>
+                    <RadioButton Classes="nav" GroupName="nav" Tag="5" IsCheckedChanged="Nav_Checked">
+                        <StackPanel Orientation="Horizontal" Spacing="12"><PathIcon Data="{StaticResource IconTransfer}" Width="16" Height="16"/><TextBlock Text="Transfer"/></StackPanel>
+                    </RadioButton>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- Content -->
+        <Grid Grid.Column="1" Margin="34,28,34,22" RowDefinitions="Auto,*">
+            <StackPanel Margin="0,0,0,22">
+                <TextBlock Name="PageTitle" Classes="h1"/>
+                <TextBlock Name="PageSubtitle" Classes="dim" Margin="0,5,0,0"/>
+            </StackPanel>
+
+            <Grid Grid.Row="1">
+                <!-- 0: Instances -->
+                <ScrollViewer Name="PageInstances" VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Border Classes="notice" IsVisible="{Binding HasPlatformNotice}" Margin="0,0,0,18">
+                            <TextBlock Text="{Binding PlatformNotice}" LineHeight="20"/>
+                        </Border>
+                        <DockPanel Margin="0,0,0,18">
+                            <Button DockPanel.Dock="Right" Command="{Binding AddApiCommand}" Margin="8,0,0,0" ToolTip.Tip="An instance that opens a Claude Code (CLI) window with an API key such as OpenRouter">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <PathIcon Data="{StaticResource IconKey}" Width="14" Height="14"/>
+                                    <TextBlock Text="Add with API key"/>
+                                </StackPanel>
+                            </Button>
+                            <Button DockPanel.Dock="Right" Classes="accent" Command="{Binding AddCommand}">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <PathIcon Data="{StaticResource IconAdd}" Width="14" Height="14"/>
+                                    <TextBlock Text="New instance"/>
+                                </StackPanel>
+                            </Button>
+                            <TextBlock Classes="dim" VerticalAlignment="Center" Margin="0,0,20,0"
+                                       Text="Every instance runs separately with its own account. Chats and settings are synced between instances; sign-ins are never mixed."/>
+                        </DockPanel>
+                        <ItemsControl ItemsSource="{Binding Instances}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- 1: Sync -->
+                <ScrollViewer Name="PageSync" VerticalScrollBarVisibility="Auto" IsVisible="False">
+                    <StackPanel MaxWidth="760" HorizontalAlignment="Left">
+                        <Border Classes="card" Margin="0,0,0,18">
+                            <StackPanel>
+                                <inf:SettingRow Title="Sync chats" Description="Every account's Claude Code chat list shows up in all instances. No chat is ever deleted.">
+                                    <ToggleSwitch IsChecked="{Binding SyncChats}"/>
+                                </inf:SettingRow>
+                                <inf:SettingRow Title="Sync settings" Description="Theme, language, MCP servers and similar settings. Sign-in, account and window position are not synced.">
+                                    <ToggleSwitch IsChecked="{Binding SyncSettings}"/>
+                                </inf:SettingRow>
+                                <inf:SettingRow Title="Sync automatically" Description="At regular intervals while the app is open, and before an instance is opened.">
+                                    <ToggleSwitch IsChecked="{Binding AutoSync}"/>
+                                </inf:SettingRow>
+                                <inf:SettingRow Title="Interval" Description="How often automatic sync runs.">
+                                    <ContentControl Content="{Binding Interval}"/>
+                                </inf:SettingRow>
+                                <DockPanel Margin="0,18,0,0">
+                                    <Button DockPanel.Dock="Left" Classes="accent" Content="Sync now" Command="{Binding SyncNowCommand}"/>
+                                    <TextBlock Text="{Binding LastSyncText}" Classes="dim" VerticalAlignment="Center" Margin="16,0,0,0"/>
+                                </DockPanel>
+                            </StackPanel>
+                        </Border>
+                        <Border Classes="card">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="How does it work?" Classes="h2" Margin="0,0,0,6"/>
+                                <TextBlock Classes="dim" Text="• A running instance's settings file is never written; the settings are applied to it once it closes."/>
+                                <TextBlock Classes="dim" Text="• If you change a setting differently in two instances, the most recent change wins."/>
+                                <TextBlock Classes="dim" Text="{Binding SyncBackupsText}"/>
+                                <TextBlock Classes="dim" Text="• Chat contents are already shared (~/.claude/projects); only the list entries are synced here."/>
+                                <TextBlock Classes="dim" Text="• To see synced chats, close the instance and open it again."/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- 2: Sign-in routing -->
+                <ScrollViewer Name="PageLogin" VerticalScrollBarVisibility="Auto" IsVisible="False">
+                    <StackPanel MaxWidth="760" HorizontalAlignment="Left">
+                        <Border Classes="card" Margin="0,0,0,18">
+                            <StackPanel>
+                                <inf:SettingRow Title="Route sign-in links automatically" IsEnabled="{Binding RoutingSupported}"
+                                                Description="The browser's 'Open Claude' link (claude://) goes to the instance you are signing in to.">
+                                    <ToggleSwitch IsChecked="{Binding HookEnabled}"/>
+                                </inf:SettingRow>
+                                <TextBlock Text="{Binding HookStatus}" Foreground="{DynamicResource Accent}" Margin="0,16,0,0" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding RoutingUnsupportedText}" IsVisible="{Binding RoutingUnsupported}" Classes="dim" Margin="0,8,0,0" LineHeight="20"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Classes="card">
+                            <StackPanel>
+                                <TextBlock Text="Usage" Classes="h2" Margin="0,0,0,10"/>
+                                <TextBlock Classes="dim" LineHeight="20" Text="{Binding RoutingHelp}"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- 3: Prompt cache -->
+                <ScrollViewer Name="PageCache" VerticalScrollBarVisibility="Auto" IsVisible="False" DataContext="{Binding Cache}">
+                    <Grid ColumnDefinitions="*,20,430">
+                        <StackPanel>
+                            <Border Classes="card" Margin="0,0,0,18">
+                                <StackPanel>
+                                    <DockPanel Margin="0,0,0,14">
+                                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                            <Button Classes="icon" ToolTip.Tip="Newer conversation" Command="{Binding NextCommand}" Margin="0,0,6,0">
+                                                <PathIcon Data="{StaticResource IconChevronRight}" Width="16" Height="16"/>
+                                            </Button>
+                                            <Button Classes="icon" ToolTip.Tip="Older conversation" Command="{Binding PreviousCommand}" Margin="0,0,6,0">
+                                                <PathIcon Data="{StaticResource IconChevronLeft}" Width="16" Height="16"/>
+                                            </Button>
+                                            <Button Content="Latest" Command="{Binding FollowCommand}"/>
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding SessionText}" Classes="dim" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                    </DockPanel>
+                                    <TextBlock Text="{Binding ClockText}" FontSize="52" FontWeight="SemiBold" Foreground="{Binding LifeBrush}"/>
+                                    <TextBlock Text="{Binding TtlText}" Classes="dim" Margin="0,0,0,14"/>
+                                    <inf:LifeBar Height="12" Value="{Binding LifeValue}" Fill="{Binding LifeBrush}"/>
+                                    <TextBlock Text="{Binding BandText}" Margin="0,16,0,8" FontWeight="SemiBold"/>
+                                    <inf:StackedBar Height="12" Read="{Binding ReadTokens}" Write="{Binding WriteTokens}" Fresh="{Binding FreshTokens}"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                        <Ellipse Width="8" Height="8" Fill="{x:Static vm:Palette.Good}" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="read" Classes="dim" Margin="0,0,16,0"/>
+                                        <Ellipse Width="8" Height="8" Fill="{x:Static vm:Palette.Warn}" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="written" Classes="dim" Margin="0,0,16,0"/>
+                                        <Ellipse Width="8" Height="8" Fill="{x:Static vm:Palette.Bad}" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="new (uncached)" Classes="dim"/>
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding AdviceText}" Foreground="{Binding AdviceBrush}" FontWeight="SemiBold" Margin="0,18,0,0"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Classes="card">
+                                <StackPanel>
+                                    <TextBlock Text="Usage per turn" Classes="h2" Margin="0,0,0,12"/>
+                                    <Grid ColumnDefinitions="46,46,66,66,66,66,*" Margin="0,0,0,6">
+                                        <TextBlock Grid.Column="0" Text="Turn" Classes="dim"/>
+                                        <TextBlock Grid.Column="1" Text="Steps" Classes="dim"/>
+                                        <TextBlock Grid.Column="2" Text="Read" Classes="dim"/>
+                                        <TextBlock Grid.Column="3" Text="Written" Classes="dim"/>
+                                        <TextBlock Grid.Column="4" Text="New" Classes="dim"/>
+                                        <TextBlock Grid.Column="5" Text="Output" Classes="dim"/>
+                                        <TextBlock Grid.Column="6" Text="Hit" Classes="dim"/>
+                                    </Grid>
+                                    <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto">
+                                        <ItemsControl ItemsSource="{Binding Rows}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid ColumnDefinitions="46,46,66,66,66,66,*" Margin="0,4">
+                                                        <TextBlock Grid.Column="0" Text="{Binding Number}" Foreground="{DynamicResource Muted}"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding Steps}"/>
+                                                        <TextBlock Grid.Column="2" Text="{Binding Read}" Foreground="{x:Static vm:Palette.Good}"/>
+                                                        <TextBlock Grid.Column="3" Text="{Binding Write}" Foreground="{x:Static vm:Palette.Warn}"/>
+                                                        <TextBlock Grid.Column="4" Text="{Binding Fresh}" Foreground="{x:Static vm:Palette.Bad}"/>
+                                                        <TextBlock Grid.Column="5" Text="{Binding Output}"/>
+                                                        <TextBlock Grid.Column="6" Text="{Binding Hit}" Foreground="{Binding HitBrush}" FontWeight="SemiBold"/>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2">
+                            <Border Classes="card" Margin="0,0,0,18">
+                                <StackPanel>
+                                    <TextBlock Text="Timer options" Classes="h2"/>
+                                    <inf:SettingRow Title="Cache lifetime" Description="Auto: found from the log and from traffic.">
+                                        <ContentControl Content="{Binding TtlOption}"/>
+                                    </inf:SettingRow>
+                                    <inf:SettingRow Title="Account type" Description="Default when the lifetime cannot be found elsewhere.">
+                                        <ContentControl Content="{Binding AccountOption}"/>
+                                    </inf:SettingRow>
+                                    <inf:SettingRow Title="Warning threshold (s)" Description="The timer turns from yellow to red and a warning is shown.">
+                                        <TextBox Name="WarnBox" Width="76" Text="{Binding WarnSeconds, Mode=OneWay}" LostFocus="Warn_Commit" KeyDown="Warn_KeyDown"/>
+                                    </inf:SettingRow>
+                                    <inf:SettingRow Title="/compact suggestion (tokens)" Description="When the cache expires, /compact is suggested for prompts larger than this.">
+                                        <TextBox Name="CompactBox" Width="96" Text="{Binding CompactAtTokens, Mode=OneWay}" LostFocus="Compact_Commit" KeyDown="Compact_KeyDown"/>
+                                    </inf:SettingRow>
+                                    <inf:SettingRow Title="Notifications" Description="At the threshold and in the last 10, 3, 2, 1 seconds (20k+ prompts).">
+                                        <ToggleSwitch IsChecked="{Binding ToastEnabled}"/>
+                                    </inf:SettingRow>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Classes="card">
+                                <StackPanel>
+                                    <TextBlock Text="Claude Code cache settings" Classes="h2"/>
+                                    <TextBlock Text="{Binding SettingsPath}" Classes="dim" FontSize="11" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" Margin="0,4,0,0"/>
+                                    <inf:SettingRow Title="Turn caching off completely" Description="DISABLE_PROMPT_CACHING"><ToggleSwitch IsChecked="{Binding DisableAll}"/></inf:SettingRow>
+                                    <inf:SettingRow Title="Turn off for Haiku" Description="DISABLE_PROMPT_CACHING_HAIKU"><ToggleSwitch IsChecked="{Binding DisableHaiku}"/></inf:SettingRow>
+                                    <inf:SettingRow Title="Turn off for Sonnet" Description="DISABLE_PROMPT_CACHING_SONNET"><ToggleSwitch IsChecked="{Binding DisableSonnet}"/></inf:SettingRow>
+                                    <inf:SettingRow Title="Turn off for Opus" Description="DISABLE_PROMPT_CACHING_OPUS"><ToggleSwitch IsChecked="{Binding DisableOpus}"/></inf:SettingRow>
+                                    <inf:SettingRow Title="Request 1-hour cache" Description="ENABLE_PROMPT_CACHING_1H"><ToggleSwitch IsChecked="{Binding Enable1h}"/></inf:SettingRow>
+                                    <inf:SettingRow Title="Force 5 minutes" Description="FORCE_PROMPT_CACHING_5M"><ToggleSwitch IsChecked="{Binding Force5m}"/></inf:SettingRow>
+                                    <inf:SettingRow Title="Lifetime (environment variable)" Description="CLAUDE_CODE_PROMPT_CACHE_TTL"><ContentControl Content="{Binding EnvTtl}"/></inf:SettingRow>
+                                    <inf:SettingRow Title="Lifetime (setting)" Description="promptCacheTtl"><ContentControl Content="{Binding SettingTtl}"/></inf:SettingRow>
+                                    <StackPanel Orientation="Horizontal" Margin="0,18,0,0" Spacing="8">
+                                        <Button Classes="accent" Content="Apply" Command="{Binding ApplyCommand}"/>
+                                        <Button Content="Reload" Command="{Binding ReloadCommand}"/>
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding SettingsStatus}" Classes="dim" Margin="0,12,0,0"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+
+                <!-- 4: Log -->
+                <Border Name="PageLog" Classes="card" IsVisible="False">
+                    <DockPanel>
+                        <Button DockPanel.Dock="Bottom" Content="Open folder" Command="{Binding OpenLogFolderCommand}" HorizontalAlignment="Left" Margin="0,14,0,0"/>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding Log}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding}" FontFamily="Cascadia Mono, Menlo, Consolas, DejaVu Sans Mono, monospace" FontSize="12.5" Margin="0,2"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </DockPanel>
+                </Border>
+
+                <!-- 5: Transfer to another PC -->
+                <Grid Name="PageTransfer" IsVisible="False" DataContext="{Binding Transfer}" RowDefinitions="Auto,*">
+                    <!-- Outside the scroll area so progress and results stay in view wherever the page is scrolled. -->
+                    <StackPanel MaxWidth="760" HorizontalAlignment="Left" Margin="0,0,0,12">
+                        <ProgressBar Height="4" IsIndeterminate="True" Margin="0,0,0,8" IsVisible="{Binding IsBusy}"
+                                     Foreground="{DynamicResource Accent}" Background="{DynamicResource Surface2}"/>
+                        <TextBlock Text="{Binding Status}" Classes="status"/>
+                    </StackPanel>
+
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <StackPanel MaxWidth="760" HorizontalAlignment="Left">
+                            <Border Classes="card" Margin="0,0,0,18">
+                                <StackPanel>
+                                    <TextBlock Text="Export from this PC" Classes="h2"/>
+                                    <TextBlock Classes="dim" Margin="0,4,0,0"
+                                               Text="The data you choose from the main Claude and every instance is written to one password-protected file."/>
+                                    <TextBlock Classes="dim" Margin="0,8,0,0" Foreground="{DynamicResource Warn}" IsVisible="{Binding SignInsUnsupported}" Text="{Binding SignInsUnsupportedText}"/>
+                                    <inf:SettingRow Title="Accounts and sign-ins" IsEnabled="{Binding SignInsSupported}"
+                                                    Description="Each instance's account and session. Opens on the new PC without asking for an email code.">
+                                        <ToggleSwitch IsChecked="{Binding ExportSignIns}"/>
+                                    </inf:SettingRow>
+                                    <inf:SettingRow Title="Chats" Description="Every account's Claude Code chat list and conversation records (~/.claude/projects).">
+                                        <ToggleSwitch IsChecked="{Binding ExportChats}"/>
+                                    </inf:SettingRow>
+                                    <inf:SettingRow Title="Settings" Description="Theme, language, MCP servers; Claude Code settings, CLAUDE.md, agents, skills, hooks.">
+                                        <ToggleSwitch IsChecked="{Binding ExportSettings}"/>
+                                    </inf:SettingRow>
+                                    <inf:SettingRow Title="Bundle password" Description="At least 8 characters. Needed to open the bundle; it cannot be recovered if forgotten.">
+                                        <TextBox Width="220" PasswordChar="•" Text="{Binding ExportPassword}"/>
+                                    </inf:SettingRow>
+                                    <inf:SettingRow Title="Repeat password" Description="Enter the same password again to guard against typos.">
+                                        <TextBox Width="220" PasswordChar="•" Text="{Binding ExportPasswordRepeat}"/>
+                                    </inf:SettingRow>
+                                    <Button Classes="accent" Content="Create bundle…" Command="{Binding ExportCommand}" HorizontalAlignment="Left" Margin="0,18,0,0"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Classes="card" Margin="0,0,0,18">
+                                <StackPanel>
+                                    <TextBlock Text="Import to this PC" Classes="h2"/>
+                                    <TextBlock Classes="dim" Margin="0,4,0,0"
+                                               Text="Choose a bundle you created on another PC. Its contents are inspected first; nothing changes."/>
+                                    <DockPanel Margin="0,14,0,0">
+                                        <Button DockPanel.Dock="Right" Content="Browse…" Command="{Binding BrowseCommand}" Margin="8,0,0,0"/>
+                                        <TextBox Text="{Binding ImportPath, Mode=OneWay}" IsReadOnly="True" ToolTip.Tip="{Binding ImportPath}"/>
+                                    </DockPanel>
+                                    <inf:SettingRow Title="Bundle password" Description="The password you set when creating the bundle.">
+                                        <TextBox Width="220" PasswordChar="•" Text="{Binding ImportPassword}"/>
+                                    </inf:SettingRow>
+                                    <Button Content="Open and inspect bundle" Command="{Binding InspectCommand}" HorizontalAlignment="Left" Margin="0,14,0,0"/>
+
+                                    <StackPanel IsVisible="{Binding HasPreview}" Margin="0,18,0,0">
+                                        <Border Background="{DynamicResource Surface2}" CornerRadius="10" Padding="14,12">
+                                            <TextBlock Text="{Binding Preview}" LineHeight="20"/>
+                                        </Border>
+                                        <TextBlock Text="What to import" Classes="h2" Margin="0,18,0,0"/>
+                                        <inf:SettingRow Title="Accounts and sign-ins" Description="Sessions in the bundle replace the ones on this PC." IsEnabled="{Binding HasSignIns}">
+                                            <ToggleSwitch IsChecked="{Binding ImportSignIns}"/>
+                                        </inf:SettingRow>
+                                        <inf:SettingRow Title="Chats" Description="Merged: missing ones are added, newer ones here are kept, none are deleted." IsEnabled="{Binding HasChats}">
+                                            <ToggleSwitch IsChecked="{Binding ImportChats}"/>
+                                        </inf:SettingRow>
+                                        <inf:SettingRow Title="Settings" Description="Settings in the bundle overwrite the ones on this PC." IsEnabled="{Binding HasSettings}">
+                                            <ToggleSwitch IsChecked="{Binding ImportSettings}"/>
+                                        </inf:SettingRow>
+                                        <Button Classes="accent" Content="Import" Command="{Binding ImportCommand}" HorizontalAlignment="Left" Margin="0,18,0,0"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Classes="card">
+                                <StackPanel>
+                                    <TextBlock Text="Good to know" Classes="h2" Margin="0,0,0,10"/>
+                                    <TextBlock Classes="dim" LineHeight="20" Text="{Binding GoodToKnow}"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>

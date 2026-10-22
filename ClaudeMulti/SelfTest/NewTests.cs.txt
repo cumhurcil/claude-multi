@@ -1,0 +1,282 @@
+// ---- macOS and Linux ---------------------------------------------------------
+Test("platform: Claude Desktop's data folder and launcher on macOS and Linux", () =>
+{
+    Check.Equal(Path.Combine("/Users/me", "Library", "Application Support", "Claude"), ClaudeEnvironment.MacDataDir("/Users/me"));
+    Check.Equal(Path.Combine("/home/me", ".config", "Claude"), ClaudeEnvironment.LinuxDataDir("/home/me", null));
+    Check.Equal(Path.Combine("/cfg", "Claude"), ClaudeEnvironment.LinuxDataDir("/home/me", "/cfg"));
+
+    var home = Path.Combine(TestContext.Root, "mac-home");
+    var system = Path.Combine(TestContext.Root, "system-apps");
+    Check.True(ClaudeEnvironment.FindMacApp(home, system) == null, "no Claude.app yet");
+    var userApp = Path.Combine(home, "Applications", "Claude.app", "Contents", "MacOS", "Claude");
+    Directory.CreateDirectory(Path.GetDirectoryName(userApp)!);
+    File.WriteAllText(userApp, "");
+    Check.Equal(userApp, ClaudeEnvironment.FindMacApp(home, system));
+    var systemApp = Path.Combine(system, "Claude.app", "Contents", "MacOS", "Claude");
+    Directory.CreateDirectory(Path.GetDirectoryName(systemApp)!);
+    File.WriteAllText(systemApp, "");
+    Check.Equal(systemApp, ClaudeEnvironment.FindMacApp(home, system));
+
+    var bin = Path.Combine(TestContext.Root, "bin");
+    Directory.CreateDirectory(bin);
+    Check.True(ClaudeEnvironment.FindLinuxDesktop(bin) == null, "Linux has no official Claude Desktop");
+    var launcher = Path.Combine(bin, "claude-desktop");
+    File.WriteAllText(launcher, "");
+    Check.Equal(launcher, ClaudeEnvironment.FindLinuxDesktop("bad\0dir" + Path.PathSeparator + bin));
+});
+
+Test("probe: the SingletonLock link target names the owning process", () =>
+{
+    Check.Equal<int?>(4242, InstanceProbe.SingletonOwnerPid("my-laptop-4242"));
+    Check.Equal<int?>(7, InstanceProbe.SingletonOwnerPid("host-7"));
+    foreach (var bad in new[] { null, "", "nopid", "host-0", "host-abc", "-5" })
+        Check.True(InstanceProbe.SingletonOwnerPid(bad) == null, $"'{bad}' has no pid");
+});
+
+UnixTest("probe: a SingletonLock of a live process means running, a stale one does not", () =>
+{
+    var env = TestContext.Env();
+    var inst = InstanceCatalog.Create(env, "p");
+    Check.True(!InstanceProbe.IsRunning(inst), "no lock -> not running");
+    File.CreateSymbolicLink(inst.SingletonLockPath, $"{Environment.MachineName}-{Environment.ProcessId}");
+    Check.True(InstanceProbe.IsRunning(inst), "lock of a live process -> running");
+    File.Delete(inst.SingletonLockPath);
+    File.CreateSymbolicLink(inst.SingletonLockPath, $"{Environment.MachineName}-{int.MaxValue - 1}");
+    Check.True(!InstanceProbe.IsRunning(inst), "lock left by a crashed process -> not running");
+});
+
+Test("closer: Linux folder names are case sensitive, macOS and Windows are not", () =>
+{
+    var inst = new InstanceInfo("2", "/home/me/ClaudeInstances/2");
+    const string exe = "/opt/Claude/claude";
+    Check.True(InstanceCloser.IsRootOf(exe + " --user-data-dir=/home/me/ClaudeInstances/2", inst, HostOs.Linux), "same folder");
+    Check.True(InstanceCloser.IsRootOf(exe + " --user-data-dir=/home/me/ClaudeInstances/2/", inst, HostOs.Linux), "trailing slash");
+    Check.True(!InstanceCloser.IsRootOf(exe + " --user-data-dir=/home/me/claudeinstances/2", inst, HostOs.Linux), "other case is another folder on Linux");
+    Check.True(InstanceCloser.IsRootOf(exe + " --user-data-dir=/home/me/claudeinstances/2", inst, HostOs.MacOS), "same folder on macOS");
+    Check.True(!InstanceCloser.IsRootOf(exe + " --user-data-dir=/home/me/ClaudeInstances/22", inst, HostOs.Linux), "22 is not 2");
+});
+
+Test("closer: /proc and ps command lines are read the same way, spaces included", () =>
+{
+    var argv = UnixProcesses.FromNulSeparated(Encoding.UTF8.GetBytes("/opt/Claude/claude\0--user-data-dir=/home/my user/ClaudeInstances/2\0--no-sandbox\0"));
+    var line = UnixProcesses.FromArgv(argv);
+    Check.Equal("/opt/Claude/claude --user-data-dir=\"/home/my user/ClaudeInstances/2\" --no-sandbox", line);
+    Check.Equal(line, UnixProcesses.FromPsArgs("/opt/Claude/claude --user-data-dir=/home/my user/ClaudeInstances/2 --no-sandbox"));
+    Check.Equal("/opt/Claude/claude --user-data-dir=/a/b --x", UnixProcesses.FromPsArgs("/opt/Claude/claude --user-data-dir=/a/b --x"));
+    Check.Equal("claude --resume", UnixProcesses.FromPsArgs("claude --resume"));
+
+    var inst = new InstanceInfo("2", "/home/my user/ClaudeInstances/2");
+    Check.True(InstanceCloser.IsRootOf(line, inst, HostOs.Linux), "root of the instance");
+    Check.True(!InstanceCloser.IsRootOf(line + " --type=gpu-process", inst, HostOs.Linux), "a helper is not the root");
+});
+
+Test("closer: Claude Desktop is told apart from its helpers and from the Claude Code CLI", () =>
+{
+    var mac = new ClaudeEnvironment("m", "i", "/Applications/Claude.app/Contents/MacOS/Claude");
+    Check.True(InstanceCloser.IsDesktopProcess(new UnixProcess(1, null, "/Applications/Claude.app/Contents/MacOS/Claude"), mac, HostOs.MacOS), "app");
+    Check.True(InstanceCloser.IsDesktopProcess(new UnixProcess(1, null, "/Applications/Claude.app/Contents/MacOS/Claude --user-data-dir=/x"), mac, HostOs.MacOS), "app with arguments");
+    Check.True(!InstanceCloser.IsDesktopProcess(new UnixProcess(2, null, "/Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu"), mac, HostOs.MacOS), "helper");
+    Check.True(!InstanceCloser.IsDesktopProcess(new UnixProcess(3, null, "/Users/me/.local/bin/claude --resume"), mac, HostOs.MacOS), "CLI");
+
+    var linux = new ClaudeEnvironment("m", "i", "/opt/Claude/claude");
+    Check.True(InstanceCloser.IsDesktopProcess(new UnixProcess(4, "/opt/Claude/claude", "claude --x"), linux, HostOs.Linux), "kernel exe path");
+    Check.True(!InstanceCloser.IsDesktopProcess(new UnixProcess(5, "/home/me/.local/bin/claude", "claude"), linux, HostOs.Linux), "CLI");
+    Check.True(!InstanceCloser.IsDesktopProcess(new UnixProcess(6, "/opt/Claude/claude", "claude"), new ClaudeEnvironment("m", "i", null), HostOs.Linux), "no known Desktop");
+});
+
+Test("launcher: macOS and Linux start Claude detached, Windows starts the exe directly", () =>
+{
+    var win = InstanceLauncher.BuildStartInfo(@"C:\c\claude.exe", [@"--user-data-dir=C:\x y"], HostOs.Windows);
+    Check.Equal(@"C:\c\claude.exe", win.FileName);
+    Check.Equal(@"--user-data-dir=C:\x y", win.ArgumentList.Single());
+
+    var mac = InstanceLauncher.BuildStartInfo("/Applications/Claude.app/Contents/MacOS/Claude", ["--user-data-dir=/Users/me/My Instances/2", "claude://x"], HostOs.MacOS);
+    Check.Equal("/bin/sh", mac.FileName);
+    Check.Equal("-c", mac.ArgumentList[0]);
+    Check.True(mac.ArgumentList[1].StartsWith("nohup "), "detached from this program and its terminal");
+    Check.Equal("/Applications/Claude.app/Contents/MacOS/Claude", mac.ArgumentList[2]);
+    Check.Equal("--user-data-dir=/Users/me/My Instances/2", mac.ArgumentList[3]);
+    Check.Equal("claude://x", mac.ArgumentList[4]);
+});
+
+Test("api: finds the CLI on macOS and Linux", () =>
+{
+    var home = Path.Combine(TestContext.Root, "home");
+    var bin = Path.Combine(TestContext.Root, "bin");
+    Directory.CreateDirectory(bin);
+    var local = Path.Combine(home, ".local", "bin", "claude");
+    Directory.CreateDirectory(Path.GetDirectoryName(local)!);
+    File.WriteAllText(local, "");
+    Check.Equal(local, CliLauncher.FindCli(home, bin, null, HostOs.Linux));
+    var onPath = Path.Combine(bin, "claude");
+    File.WriteAllText(onPath, "");
+    Check.Equal(onPath, CliLauncher.FindCli(home, "bad\0dir" + Path.PathSeparator + bin, null, HostOs.MacOS));
+});
+
+Test("api: terminal windows for macOS and Linux run this program, not the CLI with the key", () =>
+{
+    var inst = new InstanceInfo("api1", "/x/api1");
+    var command = CliLauncher.SessionCommand(["/opt/cm/ClaudeMulti"], inst);
+    Check.Equal("/opt/cm/ClaudeMulti --run-cli api1", string.Join(' ', command));
+
+    var mac = CliLauncher.BuildTerminalStartInfo(HostOs.MacOS, ["/Applications/Claude Multi/ClaudeMulti", "--run-cli", "api1"], null, null);
+    Check.Equal("osascript", mac.FileName);
+    var script = mac.ArgumentList[3];
+    Check.True(script.Contains("do script") && script.Contains("'/Applications/Claude Multi/ClaudeMulti' '--run-cli' 'api1'"), script);
+    Check.Equal("a\\\"b\\\\c", HostPlatform.AppleScriptEscape("a\"b\\c"));
+    Check.Equal("'it'\\''s'", HostPlatform.ShellQuote("it's"));
+
+    var bin = Path.Combine(TestContext.Root, "terms");
+    Directory.CreateDirectory(bin);
+    Check.True(CliLauncher.FindLinuxTerminal(bin, null) == null, "no terminal installed");
+    Check.Throws<InvalidOperationException>(() => CliLauncher.BuildTerminalStartInfo(HostOs.Linux, command, bin, null));
+    File.WriteAllText(Path.Combine(bin, "xterm"), "");
+    File.WriteAllText(Path.Combine(bin, "gnome-terminal"), "");
+    Check.Equal("gnome-terminal", CliLauncher.FindLinuxTerminal(bin, null)!.Value.Program);
+    Check.Equal("xterm", CliLauncher.FindLinuxTerminal(bin, "xterm")!.Value.Program);
+    var linux = CliLauncher.BuildTerminalStartInfo(HostOs.Linux, command, bin, null);
+    Check.Equal("gnome-terminal", linux.FileName);
+    Check.Equal("-- /opt/cm/ClaudeMulti --run-cli api1", string.Join(' ', linux.ArgumentList));
+});
+
+Test("api: the console session gets the key through its environment, never its arguments", () =>
+{
+    var env = TestContext.Env();
+    var inst = InstanceCatalog.Create(env, "api8");
+    var info = CliLauncher.BuildCliInfo("/home/me/.local/bin/claude", inst, OpenRouter() with { SkipPermissions = true }, env.Home);
+    Check.Equal("/home/me/.local/bin/claude", info.FileName);
+    Check.Equal("--dangerously-skip-permissions", info.ArgumentList.Single());
+    Check.Equal("sk-or-v1-abcdef123456", info.Environment["ANTHROPIC_AUTH_TOKEN"]);
+    Check.True(!info.ArgumentList.Any(a => a.Contains("sk-or")), "no key in arguments");
+    Check.True(Directory.Exists(ApiProfile.ClaudeConfigDirOf(inst)), "config dir created");
+});
+
+Test("key protector: a key file seals secrets and only that key opens them", () =>
+{
+    var path = Path.Combine(TestContext.Root, "a", "protector.key");
+    var a = new FileKeyProtector(path);
+    var secret = Encoding.UTF8.GetBytes("sk-or-v1-abcdef123456");
+    var sealedSecret = a.Protect(secret);
+    Check.True(sealedSecret.AsSpan().IndexOf(secret.AsSpan()) < 0, "not readable in the sealed form");
+    Check.True(secret.AsSpan().SequenceEqual(a.Unprotect(sealedSecret)), "round trip");
+    Check.True(secret.AsSpan().SequenceEqual(new FileKeyProtector(path).Unprotect(sealedSecret)), "a new instance reads the same key file");
+    Check.True(!a.SupportsChromiumKey, "cannot hold Claude Desktop's key");
+
+    var other = new FileKeyProtector(Path.Combine(TestContext.Root, "b", "protector.key"));
+    Check.Throws<TransferException>(() => other.Unprotect(sealedSecret));          // no key file there
+    other.Protect([1]);
+    Check.Throws<TransferException>(() => other.Unprotect(sealedSecret));          // another user's key
+    var tampered = (byte[])sealedSecret.Clone();
+    tampered[^1] ^= 1;
+    Check.Throws<TransferException>(() => a.Unprotect(tampered));
+    Check.Throws<TransferException>(() => a.Unprotect([1, 2, 3]));
+});
+
+UnixTest("key protector: the key file is private to the user", () =>
+{
+    var path = Path.Combine(TestContext.Root, "keys", "protector.key");
+    new FileKeyProtector(path).Protect([1]);
+    var mode = File.GetUnixFileMode(path);
+    Check.True((mode & (UnixFileMode.GroupRead | UnixFileMode.GroupWrite | UnixFileMode.OtherRead | UnixFileMode.OtherWrite)) == 0, $"mode {mode}");
+});
+
+Test("api: a key saved with the file protector reloads, is not written in clear, and comes back empty elsewhere", () =>
+{
+    var env = TestContext.Env();
+    var inst = InstanceCatalog.Create(env, "api9");
+    var mine = new FileKeyProtector(Path.Combine(TestContext.Root, "mine", "protector.key"));
+    ApiProfile.Save(inst, OpenRouter(), mine);
+    Check.True(!File.ReadAllText(ApiProfile.PathOf(inst)).Contains("abcdef123456"), "key not in clear text");
+    Check.Equal("sk-or-v1-abcdef123456", ApiProfile.Load(inst, mine)!.ApiKey);
+    Check.Equal("", ApiProfile.Load(inst, new FileKeyProtector(Path.Combine(TestContext.Root, "theirs", "protector.key")))!.ApiKey);
+});
+
+Test("state: the lock file guards concurrent updates the way the mutex does on Windows", () =>
+{
+    var path = Path.Combine(TestContext.Root, "counter.txt");
+    File.WriteAllText(path, "0");
+    Parallel.For(0, 12, _ =>
+    {
+        using var gate = StateLock.Acquire(path, TimeSpan.FromSeconds(10), useFile: true);
+        File.WriteAllText(path, (int.Parse(File.ReadAllText(path)) + 1).ToString());
+    });
+    Check.Equal("12", File.ReadAllText(path));
+});
+
+Test("linux router: mimeapps.list and .desktop formats", () =>
+{
+    const string list = "[Added Associations]\nx-scheme-handler/claude=other.desktop;\n\n[Default Applications]\ntext/html=a.desktop;\nx-scheme-handler/claude=claude-desktop.desktop;claude-multi-handler.desktop;\n";
+    Check.Equal("claude-desktop.desktop", LinuxProtocolRegistry.ParseDefault(list, LinuxProtocolRegistry.MimeType));
+    Check.True(LinuxProtocolRegistry.ParseDefault("[Added Associations]\nx-scheme-handler/claude=other.desktop;\n", LinuxProtocolRegistry.MimeType) == null, "only the default section counts");
+
+    var cleared = LinuxProtocolRegistry.RemoveDefault(list, LinuxProtocolRegistry.MimeType, "claude-desktop.desktop");
+    Check.True(!cleared.Contains("claude-desktop.desktop"), "our default entry removed");
+    Check.True(cleared.Contains("text/html=a.desktop") && cleared.Contains("x-scheme-handler/claude=other.desktop;"), "other lines kept");
+    Check.Equal(list, LinuxProtocolRegistry.RemoveDefault(list, LinuxProtocolRegistry.MimeType, "someone-else.desktop"));
+
+    var entry = LinuxProtocolRegistry.BuildDesktopEntry("\"/opt/cm/ClaudeMulti\" --uri \"%1\"");
+    Check.True(entry.Contains("Exec=\"/opt/cm/ClaudeMulti\" --uri %u\n"), entry);
+    Check.True(entry.Contains("MimeType=x-scheme-handler/claude;"), "declares the scheme");
+    Check.Equal("\"/opt/cm/ClaudeMulti\" --uri \"%1\"", LinuxProtocolRegistry.CommandFromExec("\"/opt/cm/ClaudeMulti\" --uri %u"));
+    Check.True(LinuxProtocolRegistry.CommandFromExec(null) == null, "no Exec");
+});
+
+Test("linux router: the handler file and mimeapps.list round-trip through the router's command", () =>
+{
+    var env = TestContext.Env();
+    var data = Path.Combine(TestContext.Root, "data");
+    var config = Path.Combine(TestContext.Root, "config");
+    Directory.CreateDirectory(config);
+    var mimeApps = Path.Combine(config, "mimeapps.list");
+    var registry = new LinuxProtocolRegistry(data, config, Path.Combine(TestContext.Root, "home"));
+    var router = new ProtocolRouter(registry, new StateStore(env.StatePath), "/opt/cm/ClaudeMulti");
+
+    router.RegisterHandler();
+    var desktopFile = Path.Combine(data, "applications", LinuxProtocolRegistry.DesktopFileName);
+    Check.True(File.Exists(desktopFile), "handler file written");
+
+    File.WriteAllText(mimeApps, $"[Default Applications]\nx-scheme-handler/claude={LinuxProtocolRegistry.DesktopFileName};\n");
+    Check.Equal(router.HookCommand, registry.GetCommand());
+    Check.True(router.IsHooked && router.IsRoutedHere, "hooked");
+
+    File.WriteAllText(mimeApps, "[Default Applications]\nx-scheme-handler/claude=claude-desktop.desktop;\n");
+    Check.Equal("desktop:claude-desktop.desktop", registry.GetCommand());
+    Check.True(!router.IsHooked, "Claude took the link back");
+
+    File.WriteAllText(mimeApps, $"[Default Applications]\nx-scheme-handler/claude={LinuxProtocolRegistry.DesktopFileName};\n");
+    registry.ClearCommand();
+    Check.True(!File.ReadAllText(mimeApps).Contains(LinuxProtocolRegistry.DesktopFileName), "our default removed when there was none before");
+});
+
+Test("macOS router: refuses to take over claude: links instead of pretending", () =>
+{
+    var env = TestContext.Env();
+    var store = new StateStore(env.StatePath);
+    var router = new ProtocolRouter(new UnsupportedProtocolRegistry("not here"), store, "/opt/cm/ClaudeMulti");
+    Check.True(!router.IsSupported && router.UnsupportedReason == "not here", "reported as unsupported");
+    Check.Throws<IOException>(() => router.Enable());
+    Check.True(!store.Load().HookEnabled, "nothing was switched on");
+});
+
+Test("transfer: sign-ins move between Windows PCs only; chats and settings move everywhere", () =>
+{
+    var a = TestContext.SeedPc("A", new FakeProtector("pc-a"), RandomNumberGenerator.GetBytes(32), withSecondInstance: false);
+    var b = TestContext.EnvAt("B");
+    var unix = new TransferService(b, new FileKeyProtector(Path.Combine(TestContext.Root, "keyB", "protector.key")));
+    Check.True(!unix.SupportsSignIns, "key files cannot carry Claude Desktop's key");
+    Check.Throws<TransferException>(() => unix.Export(Path.Combine(TestContext.Root, "x.cmxfer"), Pass, TransferScope.All, new Dictionary<string, string>()));
+
+    var bundle = new TransferService(a, new FakeProtector("pc-a")).Export(Path.Combine(TestContext.Root, "w.cmxfer"), Pass, TransferScope.All, new Dictionary<string, string>());
+    Check.Equal(TransferService.OsName(HostPlatform.Current), bundle.Manifest.Os);
+    Check.True(!bundle.Warnings.Any(w => w.Contains("made on")), "nothing to warn about on the same system");
+
+    Check.Throws<TransferException>(() => unix.Import(bundle.Path, Pass, new TransferScope(true, false, false)));
+    var result = unix.Import(bundle.Path, Pass, TransferScope.All);
+    Check.True(result.Warnings.Any(w => w.Contains("Windows only")), "says why sign-ins stayed behind");
+    Check.True(!File.Exists(Path.Combine(b.MainDataDir, "Local State")), "no foreign encryption key written");
+    Check.True(!File.Exists(Path.Combine(b.ClaudeHomeDir, ".credentials.json")), "no sign-in file copied");
+    Check.True(JsonFile.ReadOrNull(Path.Combine(b.MainDataDir, "config.json"))?.ContainsKey("oauth:tokenCacheV2") != true, "no token imported");
+    Check.Equal("""{"model":"opus"}""", File.ReadAllText(Path.Combine(b.ClaudeHomeDir, "settings.json")));
+    Check.True(File.Exists(Path.Combine(b.MainDataDir, "claude-code-sessions", TestContext.AccMain, TestContext.OrgId, "local_chat-main.json")), "chat arrived");
+});
+

@@ -1,0 +1,40 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="ClaudeMulti.App.Views.ApiKeyDialog"
+        Width="520" SizeToContent="Height" CanResize="False" ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner" Background="{DynamicResource Bg}" Foreground="{DynamicResource Text}" FontSize="13.5">
+    <StackPanel Margin="26,24,26,22">
+        <TextBlock Name="Heading" Classes="h2"/>
+        <TextBlock Classes="dim" Margin="0,6,0,16"
+                   Text="This instance opens as Claude Code (CLI) with an API key in a new console window instead of Claude Desktop. For OpenRouter, leave the address as it is and paste the key from openrouter.ai/keys. Any OpenRouter model such as GLM, GPT or Gemini can be entered."/>
+
+        <TextBlock Text="API address" FontWeight="SemiBold"/>
+        <TextBox Name="BaseUrl" Margin="0,6,0,0" TextChanged="Field_Changed"/>
+
+        <TextBlock Text="API key" FontWeight="SemiBold" Margin="0,14,0,0"/>
+        <TextBox Name="Key" Margin="0,6,0,0" PasswordChar="•" TextChanged="Field_Changed"/>
+        <TextBlock Name="KeyHint" Classes="dim" FontSize="11.5" Margin="0,4,0,0"/>
+
+        <TextBlock Text="Models (one per line, the first is the default; e.g. z-ai/glm-5.3)" FontWeight="SemiBold" Margin="0,14,0,0"/>
+        <TextBox Name="Models" Margin="0,6,0,0" Height="96" AcceptsReturn="True" TextWrapping="NoWrap" TextChanged="Field_Changed"/>
+
+        <TextBlock Text="Working folder (user folder if empty)" FontWeight="SemiBold" Margin="0,14,0,0"/>
+        <DockPanel Margin="0,6,0,0">
+            <Button DockPanel.Dock="Right" Content="Browse…" Click="Browse_Click" Margin="8,0,0,0"/>
+            <TextBox Name="WorkDir" TextChanged="Field_Changed"/>
+        </DockPanel>
+
+        <TextBlock Text="Context window (tokens; default if empty, e.g. 200000 or 1000000)" FontWeight="SemiBold" Margin="0,14,0,0"/>
+        <TextBox Name="ContextTokens" Margin="0,6,0,0" TextChanged="Field_Changed"/>
+
+        <CheckBox Name="SkipPermissions" Margin="0,14,0,0" Content="Skip permissions (--dangerously-skip-permissions)"
+                  ToolTip.Tip="Claude Code runs without asking for file and command permissions. Use only in folders you trust."
+                  IsCheckedChanged="Field_Toggled"/>
+
+        <TextBlock Name="Error" Classes="bad" Margin="0,8,0,0" MinHeight="16"/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0" Spacing="8">
+            <Button Content="Cancel" IsCancel="True" Click="Cancel_Click"/>
+            <Button Name="Ok" Classes="accent" Content="Save" IsDefault="True" Click="Ok_Click" MinWidth="86" HorizontalContentAlignment="Center"/>
+        </StackPanel>
+    </StackPanel>
+</Window>

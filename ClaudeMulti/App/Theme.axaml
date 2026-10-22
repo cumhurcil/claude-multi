@@ -1,0 +1,227 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:inf="using:ClaudeMulti.App.Infrastructure">
+
+    <Styles.Resources>
+        <Color x:Key="AccentColor">#D97757</Color>
+        <SolidColorBrush x:Key="Bg" Color="#181513"/>
+        <SolidColorBrush x:Key="Sidebar" Color="#1F1C19"/>
+        <SolidColorBrush x:Key="Surface" Color="#262220"/>
+        <SolidColorBrush x:Key="Surface2" Color="#302B28"/>
+        <SolidColorBrush x:Key="SurfaceHover" Color="#3B3531"/>
+        <SolidColorBrush x:Key="Line" Color="#3B3531"/>
+        <SolidColorBrush x:Key="Text" Color="#F3EEE9"/>
+        <SolidColorBrush x:Key="Muted" Color="#A89F96"/>
+        <SolidColorBrush x:Key="Accent" Color="#D97757"/>
+        <SolidColorBrush x:Key="AccentHover" Color="#E48B6C"/>
+        <SolidColorBrush x:Key="AccentPressed" Color="#C25E40"/>
+        <SolidColorBrush x:Key="Good" Color="#5DBB84"/>
+        <SolidColorBrush x:Key="Warn" Color="#E8B04A"/>
+        <SolidColorBrush x:Key="Bad" Color="#E5604E"/>
+        <SolidColorBrush x:Key="Info" Color="#6FA8DC"/>
+        <SolidColorBrush x:Key="Tint" Color="#3A2820"/>
+
+        <!-- Fluent control brushes retuned to the warm palette -->
+        <SolidColorBrush x:Key="ButtonBackground" Color="#302B28"/>
+        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#3B3531"/>
+        <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#4A433E"/>
+        <SolidColorBrush x:Key="ButtonForeground" Color="#F3EEE9"/>
+        <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="#F3EEE9"/>
+        <SolidColorBrush x:Key="ButtonForegroundPressed" Color="#F3EEE9"/>
+        <SolidColorBrush x:Key="ButtonBorderBrush" Color="Transparent"/>
+        <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="Transparent"/>
+        <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="Transparent"/>
+        <SolidColorBrush x:Key="AccentButtonBackground" Color="#D97757"/>
+        <SolidColorBrush x:Key="AccentButtonBackgroundPointerOver" Color="#E48B6C"/>
+        <SolidColorBrush x:Key="AccentButtonBackgroundPressed" Color="#C25E40"/>
+        <SolidColorBrush x:Key="AccentButtonForeground" Color="White"/>
+        <SolidColorBrush x:Key="AccentButtonForegroundPointerOver" Color="White"/>
+        <SolidColorBrush x:Key="AccentButtonForegroundPressed" Color="White"/>
+        <SolidColorBrush x:Key="TextControlBackground" Color="#302B28"/>
+        <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="#302B28"/>
+        <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#302B28"/>
+        <SolidColorBrush x:Key="TextControlBorderBrush" Color="Transparent"/>
+        <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#4A433E"/>
+        <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#D97757"/>
+        <SolidColorBrush x:Key="TextControlForeground" Color="#F3EEE9"/>
+        <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="#D97757"/>
+        <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="#E48B6C"/>
+        <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="#C25E40"/>
+        <SolidColorBrush x:Key="ToggleSwitchFillOff" Color="#4A433E"/>
+        <SolidColorBrush x:Key="ToggleSwitchFillOffPointerOver" Color="#5A524C"/>
+        <SolidColorBrush x:Key="ToggleSwitchFillOffPressed" Color="#5A524C"/>
+        <SolidColorBrush x:Key="ToggleSwitchStrokeOff" Color="Transparent"/>
+        <SolidColorBrush x:Key="ToggleSwitchStrokeOffPointerOver" Color="Transparent"/>
+        <SolidColorBrush x:Key="ToggleSwitchStrokeOffPressed" Color="Transparent"/>
+        <SolidColorBrush x:Key="ToggleSwitchKnobFillOff" Color="White"/>
+        <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPointerOver" Color="White"/>
+        <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPressed" Color="White"/>
+
+        <!-- Icons (Material Design Icons, Apache 2.0) so no icon font is needed on any system -->
+        <StreamGeometry x:Key="IconAdd">M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z</StreamGeometry>
+        <StreamGeometry x:Key="IconFolder">M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z</StreamGeometry>
+        <StreamGeometry x:Key="IconKey">M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z</StreamGeometry>
+        <StreamGeometry x:Key="IconEdit">M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z</StreamGeometry>
+        <StreamGeometry x:Key="IconStop">M6 6h12v12H6z</StreamGeometry>
+        <StreamGeometry x:Key="IconTrash">M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z</StreamGeometry>
+        <StreamGeometry x:Key="IconPlay">M8 5v14l11-7z</StreamGeometry>
+        <StreamGeometry x:Key="IconLogin">M11 7L9.6 8.4l2.6 2.6H2v2h10.2l-2.6 2.6L11 17l5-5-5-5zm9 12h-8v2h8c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-8v2h8v14z</StreamGeometry>
+        <StreamGeometry x:Key="IconInstances">M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z</StreamGeometry>
+        <StreamGeometry x:Key="IconSync">M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z</StreamGeometry>
+        <StreamGeometry x:Key="IconLink">M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z</StreamGeometry>
+        <StreamGeometry x:Key="IconTimer">M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.02 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z</StreamGeometry>
+        <StreamGeometry x:Key="IconLog">M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z</StreamGeometry>
+        <StreamGeometry x:Key="IconTransfer">M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z</StreamGeometry>
+        <StreamGeometry x:Key="IconChevronLeft">M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z</StreamGeometry>
+        <StreamGeometry x:Key="IconChevronRight">M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z</StreamGeometry>
+    </Styles.Resources>
+
+    <!-- Text -->
+    <Style Selector="TextBlock">
+        <Setter Property="TextWrapping" Value="Wrap"/>
+    </Style>
+    <Style Selector="TextBlock.dim">
+        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+        <Setter Property="FontSize" Value="12.5"/>
+    </Style>
+    <Style Selector="TextBlock.h1">
+        <Setter Property="FontSize" Value="26"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+    <Style Selector="TextBlock.h2">
+        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+    <Style Selector="TextBlock.bad">
+        <Setter Property="Foreground" Value="{DynamicResource Bad}"/>
+        <Setter Property="FontSize" Value="12"/>
+    </Style>
+    <Style Selector="TextBlock.status">
+        <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+
+    <Style Selector="Border.card">
+        <Setter Property="Background" Value="{DynamicResource Surface}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="14"/>
+        <Setter Property="Padding" Value="20"/>
+    </Style>
+    <Style Selector="Border.notice">
+        <Setter Property="Background" Value="{DynamicResource Tint}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="10"/>
+        <Setter Property="Padding" Value="14,10"/>
+    </Style>
+
+    <!-- Buttons -->
+    <Style Selector="Button">
+        <Setter Property="CornerRadius" Value="9"/>
+        <Setter Property="Padding" Value="14,8"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.accent">
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+    <Style Selector="Button.icon">
+        <Setter Property="Width" Value="36"/>
+        <Setter Property="Height" Value="36"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="Button:disabled">
+        <Setter Property="Opacity" Value="0.4"/>
+    </Style>
+
+    <Style Selector="TextBox">
+        <Setter Property="CornerRadius" Value="9"/>
+        <Setter Property="Padding" Value="11,8"/>
+        <Setter Property="FontSize" Value="13.5"/>
+        <Setter Property="MinHeight" Value="0"/>
+    </Style>
+
+    <!-- Sidebar navigation -->
+    <Style Selector="RadioButton.nav">
+        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Margin" Value="0,0,0,4"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Name="Bd" CornerRadius="10" Padding="14,11" Background="Transparent">
+                    <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                                      Foreground="{TemplateBinding Foreground}"/>
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+    <Style Selector="RadioButton.nav:pointerover /template/ Border#Bd">
+        <Setter Property="Background" Value="{DynamicResource Surface}"/>
+    </Style>
+    <Style Selector="RadioButton.nav:checked">
+        <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+    </Style>
+    <Style Selector="RadioButton.nav:checked /template/ Border#Bd">
+        <Setter Property="Background" Value="{DynamicResource Surface2}"/>
+    </Style>
+
+    <!-- Segmented choice -->
+    <Style Selector="RadioButton.segment">
+        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Margin" Value="0,0,6,0"/>
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Name="Bd" CornerRadius="8" Padding="13,7" Background="{DynamicResource Surface2}"
+                        BorderThickness="1" BorderBrush="Transparent">
+                    <ContentPresenter Content="{TemplateBinding Content}" Foreground="{TemplateBinding Foreground}"
+                                      HorizontalAlignment="Center"/>
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+    <Style Selector="RadioButton.segment:pointerover /template/ Border#Bd">
+        <Setter Property="Background" Value="{DynamicResource SurfaceHover}"/>
+    </Style>
+    <Style Selector="RadioButton.segment:checked">
+        <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+    </Style>
+    <Style Selector="RadioButton.segment:checked /template/ Border#Bd">
+        <Setter Property="Background" Value="{DynamicResource Tint}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
+    </Style>
+
+    <!-- A settings line -->
+    <Style Selector="inf|SettingRow">
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Padding="0,13">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Margin="0,0,24,0" VerticalAlignment="Center">
+                            <TextBlock Text="{TemplateBinding Title}" FontSize="14" FontWeight="SemiBold"/>
+                            <TextBlock Text="{TemplateBinding Description}" Classes="dim" Margin="0,3,0,0"/>
+                        </StackPanel>
+                        <ContentPresenter Grid.Column="1" Content="{TemplateBinding Content}" VerticalAlignment="Center"/>
+                    </Grid>
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+
+    <Style Selector="ToggleSwitch">
+        <Setter Property="OnContent" Value=""/>
+        <Setter Property="OffContent" Value=""/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+
+    <Style Selector="ToolTip">
+        <Setter Property="Background" Value="{DynamicResource Surface2}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
+        <Setter Property="MaxWidth" Value="340"/>
+    </Style>
+</Styles>

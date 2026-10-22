@@ -1,0 +1,16 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="ClaudeMulti.App.Views.MessageDialog"
+        Width="480" SizeToContent="Height" CanResize="False" ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner" Background="{DynamicResource Bg}" Foreground="{DynamicResource Text}" FontSize="13.5">
+    <StackPanel Margin="26,24,26,22">
+        <TextBlock Name="Heading" Classes="h2"/>
+        <ScrollViewer MaxHeight="360" VerticalScrollBarVisibility="Auto" Margin="0,10,0,0">
+            <TextBlock Name="Body" LineHeight="20"/>
+        </ScrollViewer>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0" Spacing="8">
+            <Button Name="No" Content="No" Click="No_Click"/>
+            <Button Name="Yes" Classes="accent" Content="Yes" IsDefault="True" Click="Yes_Click" MinWidth="86" HorizontalContentAlignment="Center"/>
+        </StackPanel>
+    </StackPanel>
+</Window>

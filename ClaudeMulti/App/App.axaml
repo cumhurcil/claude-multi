@@ -1,0 +1,15 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="ClaudeMulti.App.App"
+             RequestedThemeVariant="Dark">
+    <Application.Styles>
+        <FluentTheme>
+            <FluentTheme.Palettes>
+                <ColorPaletteResources x:Key="Dark" Accent="#D97757" RegionColor="#181513"
+                                       ChromeLow="#262220" ChromeMediumLow="#302B28" ChromeMedium="#3B3531" ChromeHigh="#4A433E"
+                                       BaseHigh="#F3EEE9" BaseMediumHigh="#CFC7BF" BaseMedium="#A89F96" BaseMediumLow="#6F675F" BaseLow="#3B3531"/>
+            </FluentTheme.Palettes>
+        </FluentTheme>
+        <StyleInclude Source="avares://ClaudeMulti/Theme.axaml"/>
+    </Application.Styles>
+</Application>
